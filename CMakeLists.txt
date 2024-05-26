@@ -36,14 +36,6 @@ include_directories(SYSTEM ${INDI_INCLUDE_DIR})
 include_directories( ${NOVA_INCLUDE_DIR})
 include_directories( ${EV_INCLUDE_DIR})
 
-# find libusb
-find_path(LIBUSB_INCLUDE_DIR
-  NAMES libusb.h
-  PATH_SUFFIXES "include" "libusb" "libusb-1.0")
-find_library(LIBUSB_LIBRARY
-  NAMES usb-1.0
-  PATH_SUFFIXES "lib" "lib32" "lib64")
-
 # find liblumix
 find_library(LIBLUMIX_LIBRARY
     NAMES lumix
@@ -68,13 +60,10 @@ target_link_libraries(
     ${INDI_LIBRARIES}
     ${NOVA_LIBRARIES}
     ${GSL_LIBRARIES}
-    ${LIBUSB_LIBRARY}
     ${LIBLUMIX_LIBRARY}
     ${PUGIXML_LIBRARY}
     lumix
-    usb-1.0
     fmt
-    spdlog
 )
 
 # and link it to indi dir
