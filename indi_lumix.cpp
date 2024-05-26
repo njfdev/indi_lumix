@@ -26,7 +26,6 @@ bool LumixCameraDriver::initProperties()
 
     CameraIPAddressTP[0].fill("CAMERA_IP", "Camera IP Address", "");
     CameraIPAddressTP.fill(getDeviceName(), "CAMERA_IP", "Camera IP Address", MAIN_CONTROL_TAB, IP_RW, 60, IPS_IDLE);
-    defineProperty(&CameraIPAddressTP);
 
     CameraIPAddressTP.onUpdate([this]
     {
@@ -46,6 +45,8 @@ bool LumixCameraDriver::initProperties()
 
 bool LumixCameraDriver::updateProperties()
 {
+    defineProperty(CameraIPAddressTP);
+
     INDI::CCD::updateProperties();
 
     if (isConnected()) {
