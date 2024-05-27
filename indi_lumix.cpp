@@ -24,8 +24,12 @@ bool LumixCameraDriver::initProperties()
 {
     INDI::CCD::initProperties();
 
-    CameraIPAddressTP[0].fill("CAMERA_IP", "Camera IP Address", "");
-    CameraIPAddressTP.fill(getDeviceName(), "CAMERA_IP", "Camera IP Address", MAIN_CONTROL_TAB, IP_RW, 60, IPS_IDLE);
+    // Add the camera IP address property (and load the default value from the config file)
+    char defaultCameraIP[256] = {""};
+    IUGetConfigText(getDeviceName(), "CAMERA_IP", "CAMERA_IP", defaultCameraIP, sizeof(defaultCameraIP));
+
+    CameraIPAddressTP[0].fill("CAMERA_IP", "Camera IP", defaultCameraIP);
+    CameraIPAddressTP.fill(getDeviceName(), "CAMERA_IP", "Camera IP", MAIN_CONTROL_TAB, IP_RW, 60, IPS_IDLE);
     defineProperty(CameraIPAddressTP);
 
     CameraIPAddressTP.onUpdate([this]
@@ -85,6 +89,13 @@ bool LumixCameraDriver::Disconnect()
     camera.reset();
 
     LOG_INFO("Disconnected from camera");
+
+    return true;
+}
+
+bool LumixCameraDriver::saveConfigItems(FILE *fp) {
+    INDI::CCD::saveConfigItems(fp);
+    CameraIPAddressTP.save(fp);
 
     return true;
 }
