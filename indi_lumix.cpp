@@ -105,6 +105,7 @@ bool LumixCameraDriver::setupParams()
     float x_pixel_size, y_pixel_size;
     int bit_depth = 8; // valid values are 8, 16, 32
     int x_1, y_1, x_2, y_2;
+    int channels = 3;
 
     // TODO: Actually get the pixel size from the camera
     x_pixel_size = 5.95;
@@ -118,6 +119,9 @@ bool LumixCameraDriver::setupParams()
     // Set the pixel size
     SetCCDParams(x_2 - x_1, y_2 - y_1, bit_depth, x_pixel_size, y_pixel_size);
 
+    // Set the channels
+    PrimaryCCD.setNAxis(channels);
+
     // TODO: Now we usually do the following in the hardware
     // Set Frame to LIGHT or NORMAL
     // Set Binning to 1x1
@@ -125,7 +129,7 @@ bool LumixCameraDriver::setupParams()
 
     // Calculate the required buffer
     int nbuf;
-    nbuf = PrimaryCCD.getXRes() * PrimaryCCD.getYRes() * (PrimaryCCD.getBPP() / 8); // this is the pixel count
+    nbuf = PrimaryCCD.getXRes() * PrimaryCCD.getYRes() * ((PrimaryCCD.getBPP() * PrimaryCCD.getNAxis()) / 8); // this is the pixel count
     nbuf += 512; // add some extra buffer
     PrimaryCCD.setFrameBufferSize(nbuf);
 
@@ -285,6 +289,7 @@ int LumixCameraDriver::downloadImage()
     int width      = PrimaryCCD.getSubW() / PrimaryCCD.getBinX();
     int height     = PrimaryCCD.getSubH() / PrimaryCCD.getBinY();
     int bpp        = PrimaryCCD.getBPP();
+    int channels   = PrimaryCCD.getNAxis();
 
     /**********************************************************
      *
@@ -300,6 +305,8 @@ int LumixCameraDriver::downloadImage()
         for (int j = 0; j < width; j++)
             image[i * width + j] = rand() % 255;*/
 
+    LOG_INFO("Starting Copy...");
+
     Lumix::ImageData imageData;
     if (!camera->DownloadLatestPhoto(imageData)) {
         LOG_ERROR("Error downloading image");
@@ -313,30 +320,25 @@ int LumixCameraDriver::downloadImage()
         return -1;
     }
 
-    /* TODO: fix this because I was having issues
-    if (imageData.rawPixelData.size() != (width * height * (PrimaryCCD.getBPP() / 8))) {
+    if (imageData.pixelBuffer.size() != (width * height * channels * (PrimaryCCD.getBPP() / 8))) {
         LOG_ERROR("Error: Image size does not match expected size");
 
         return -1;
     }
-    */
 
-    LOG_INFO("Starting Copy...");
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            // set red, green values
-            uint8_t red = imageData.pixelBuffer[(i * width)*3 + j*3];
-            uint8_t green = imageData.pixelBuffer[(i * width)*3 + j*3 + 1];
-            uint8_t blue = imageData.pixelBuffer[(i * width)*3 + j*3 + 2];
+    uint8_t *dstR = image;
+    uint8_t *dstG = image + width * height;
+    uint8_t *dstB = image + width * height * 2;
 
-            // average the red, green, and blue values
-            uint8_t luminosity = (red + green + blue) / 3;
+    const uint8_t *src = imageData.pixelBuffer.data();
+    const uint8_t *srcEnd = src + imageData.pixelBuffer.size();
 
-            // set the pixel value
-            image[i * width + j] = luminosity;
-        }
+    while (src < srcEnd) {
+        *dstR++ = *src++;
+        *dstG++ = *src++;
+        *dstB++ = *src++;
     }
-
+    
     LOG_INFO("Download complete.");
 
     ExposureComplete(&PrimaryCCD);
