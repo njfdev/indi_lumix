@@ -46,6 +46,11 @@ find_library(PUGIXML_LIBRARY
     NAMES pugixml
     PATH_SUFFIXES "lib" "lib32" "lib64")
 
+# find libraw
+find_library(LIBRAW_LIBRARY
+    NAMES raw
+    PATH_SUFFIXES "lib" "lib32" "lib64")
+
 include(CMakeCommon)
 
 # tell cmake to build our executable
@@ -62,6 +67,7 @@ target_link_libraries(
     ${GSL_LIBRARIES}
     ${LIBLUMIX_LIBRARY}
     ${PUGIXML_LIBRARY}
+    ${LIBRAW_LIBRARY}
     lumix
     fmt
 )

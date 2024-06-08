@@ -113,8 +113,8 @@ bool LumixCameraDriver::setupParams()
 
     // TODO: Actually get the image size from the camera
     x_1 = y_1 = 0;
-    x_2 = 6000;
-    y_2 = 4000;
+    x_2 = 6008;
+    y_2 = 4008;
 
     // Set the pixel size
     SetCCDParams(x_2 - x_1, y_2 - y_1, bit_depth, x_pixel_size, y_pixel_size);
@@ -256,7 +256,7 @@ bool LumixCameraDriver::UpdateCCDFrame(int x, int y, int w, int h) {
     PrimaryCCD.setFrame(x_1, y_1, bin_width, bin_height);
 
     int nbuf;
-    nbuf = (bin_width * bin_height * PrimaryCCD.getBPP() / 8); // this is the pixel count
+    nbuf = (bin_width * bin_height * PrimaryCCD.getNAxis() * PrimaryCCD.getBPP() / 8); // this is the pixel count
     nbuf += 512; // add some extra buffer
     PrimaryCCD.setFrameBufferSize(nbuf);
 
@@ -326,18 +326,23 @@ int LumixCameraDriver::downloadImage()
         return -1;
     }
 
-    uint8_t *dstR = image;
-    uint8_t *dstG = image + width * height;
-    uint8_t *dstB = image + width * height * 2;
+    // Copy rgbrgb... to rrr...ggg...bbb...
+    std::vector<uint8_t> r(width * height * bpp / 8);
+    std::vector<uint8_t> g(width * height * bpp / 8);
+    std::vector<uint8_t> b(width * height * bpp / 8);
 
-    const uint8_t *src = imageData.pixelBuffer.data();
-    const uint8_t *srcEnd = src + imageData.pixelBuffer.size();
-
-    while (src < srcEnd) {
-        *dstR++ = *src++;
-        *dstG++ = *src++;
-        *dstB++ = *src++;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            r[i * width + j] = imageData.pixelBuffer[(i * width + j) * channels + 0];
+            g[i * width + j] = imageData.pixelBuffer[(i * width + j) * channels + 1];
+            b[i * width + j] = imageData.pixelBuffer[(i * width + j) * channels + 2];
+        }
     }
+
+    // Copy the data to the frame buffer
+    std::copy(r.begin(), r.end(), image);
+    std::copy(g.begin(), g.end(), image + r.size());
+    std::copy(b.begin(), b.end(), image + r.size() + g.size());
     
     LOG_INFO("Download complete.");
 
