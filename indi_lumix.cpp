@@ -39,7 +39,7 @@ bool LumixCameraDriver::initProperties()
     });
 
     // set which capabilities the camera has
-    uint32_t cap = CCD_HAS_SHUTTER | CCD_CAN_ABORT | CCD_CAN_BIN | CCD_CAN_SUBFRAME;
+    uint32_t cap = CCD_HAS_SHUTTER;
     SetCCDCapability(cap);
 
     // Add configuration for debug
