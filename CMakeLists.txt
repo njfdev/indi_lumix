@@ -14,8 +14,8 @@ find_package(ZLIB REQUIRED)
 find_package(GSL REQUIRED)
 
 # these will be used to set the version number in config.h and our driver's xml file
-set(INDI_LUMIX_VERSION_MAJOR 0)
-set(INDI_LUMIX_VERSION_MINOR 2)
+set(INDI_LUMIX_VERSION_MAJOR 1)
+set(INDI_LUMIX_VERSION_MINOR 0)
 
 # do the replacement in the config.h
 configure_file(
@@ -36,19 +36,14 @@ include_directories(SYSTEM ${INDI_INCLUDE_DIR})
 include_directories( ${NOVA_INCLUDE_DIR})
 include_directories( ${EV_INCLUDE_DIR})
 
-# find liblumix
-find_library(LIBLUMIX_LIBRARY
-    NAMES lumix
-    PATH_SUFFIXES "lib" "lib32" "lib64")
-
-# find pugixml
-find_library(PUGIXML_LIBRARY
-    NAMES pugixml
-    PATH_SUFFIXES "lib" "lib32" "lib64")
-
 # find libraw
 find_library(LIBRAW_LIBRARY
     NAMES raw
+    PATH_SUFFIXES "lib" "lib32" "lib64")
+
+# find libgphoto2
+find_library(GPHOTO2_LIBRARY
+    NAMES gphoto2
     PATH_SUFFIXES "lib" "lib32" "lib64")
 
 include(CMakeCommon)
@@ -65,10 +60,10 @@ target_link_libraries(
     ${INDI_LIBRARIES}
     ${NOVA_LIBRARIES}
     ${GSL_LIBRARIES}
-    ${LIBLUMIX_LIBRARY}
-    ${PUGIXML_LIBRARY}
     ${LIBRAW_LIBRARY}
-    lumix
+    ${GPHOTO2_LIBRARY}
+    gphoto2
+    gphoto2_port
     fmt
 )
 
@@ -80,8 +75,8 @@ target_include_directories(
     ${NOVA_INCLUDE_DIR}
     ${GSL_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIRS}
-    ${LIBUSB_INCLUDE_DIR}
     "/usr/local/include"
+    "/usr/include"
     "/usr/include/libindi"
 )
 

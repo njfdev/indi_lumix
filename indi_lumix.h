@@ -1,9 +1,11 @@
 #pragma once
 
-#include <liblumix.h>
-
 #include <libindi/indiccd.h>
 #include <indielapsedtimer.h>
+#include <gphoto2/gphoto2-camera.h>
+#include <libraw/libraw.h>
+#include <unistd.h>
+#include <map>
 
 class LumixCameraDriver : public INDI::CCD
 {
@@ -23,7 +25,8 @@ protected:
     virtual bool initProperties() override;
     virtual bool updateProperties() override;
 
-    virtual bool saveConfigItems(FILE *fp) override;
+    // FITS Header Values to add/adjust: INSTRUME, INPUTFMT, ISOSPEED, 
+    void addFITSKeywords(INDI::CCDChip *targetChip, std::vector<INDI::FITSRecord> &fitsKeywords) override;
 
     void TimerHit() override;
     //virtual bool ISNewNumber(const char *dev, const char *name, double values[], char *names[], int n) override;
@@ -33,14 +36,40 @@ protected:
     virtual bool UpdateCCDFrameType(INDI::CCDChip::CCD_FRAME fType) override;
 
 private:
-    std::unique_ptr<Lumix::Camera> camera;
+    // variables for dealing with gphoto2
+    Camera *camera;
+    GPContext *gpContext;
+    // stores the latest file path details of the most recent photo
+    CameraFilePath filePath;
+    // stores camera widgets (basically settings)
+    CameraWidget *config;
+    CameraWidget *iso_w;
+    CameraWidget *ss; // shutter speed
+    // camera setting possible choices
+    std::map<float, const char*> ss_choices;
+    std::map<int, const char*> iso_choices;
 
-    // define Indi properties for iso, shutter speed, and aperture
-    /*INDI::PropertyNumber IsoNP {1};
-    INDI::PropertyNumber ShutterSpeedNP {1};
-    INDI::PropertyNumber ApertureNP {1};*/
+    // functions for dealing with gphoto2
+    GPContext* create_context();
+    bool connect_to_lumix_camera();
+    bool load_camera_widgets();
+    bool load_camera_info();
+    void error_func(GPContext *context, const char *str, void *data);
+    void status_func(GPContext *context, const char *str, void *data);
 
-    INDI::PropertyText CameraIPAddressTP {1};
+    // define Indi properties
+    INDI::PropertyNumber IsoNP {1};
+    INDI::PropertyText CameraInfoTP {4};
+    enum {
+        MANUFACTURER,
+        MODEL,
+        SERIAL,
+        VERSION
+    };
+    INDI::PropertySwitch SaveOnCameraSP {1};
+    enum {
+        SAVE_ON_CAMERA
+    };
 
     INDI::ElapsedTimer m_ElapsedTimer;
     double ExposureRequest;
@@ -48,4 +77,9 @@ private:
 
     int downloadImage();
     bool setupParams();
+    bool getExposureValue(float duration, const char **value);
+    bool setShutterSpeed(float duration);
+    bool getIsoChoiceValue(int iso, const char **value);
+    bool setIso(int iso);
+    bool getIso(int *iso);
 };
